@@ -1,25 +1,19 @@
-name: Check if user is a close contributor
-
-on:
-  issue_comment:
-    types: [created]
-  issues:
-    types: [opened]
-
-# The 'permissions' block has been removed to use default token permissions.
-# Ensure your repository/organization settings grant the GITHUB_TOKEN
-# read access to organization members.
-
 jobs:
   check-membership:
     runs-on: ubuntu-latest
-    outputs:
-      is-member: ${{ steps.check_team_membership.outputs.is_member }}
     steps:
-      - name: Check if user is in the designated team
+      - name: Generate token from GitHub App
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.MY_APP_ID }}
+          private_key: ${{ secrets.MY_APP_PRIVATE_KEY }}
+
+      - name: Check team membership using GitHub App token
         id: check_team_membership
         uses: actions/github-script@v7
         with:
+          github-token: ${{ steps.generate_token.outputs.token }}
           script: |
             const username = context.actor;
             const org = context.repo.owner;
@@ -37,7 +31,7 @@ jobs:
                 isMember = true;
                 console.log(`✅ ${username} is an active member of the '${team_slug}' team.`);
               } else {
-                  console.log(`ℹ️ ${username} has a '${response.data.state}' state in the '${team_slug}' team.`);
+                console.log(`ℹ️ ${username} has a '${response.data.state}' state in the '${team_slug}' team.`);
               }
             } catch (error) {
               if (error.status === 404) {
@@ -46,4 +40,5 @@ jobs:
                 core.setFailed(`API call failed with status ${error.status}: ${error.message}`);
               }
             }
+
             core.setOutput('is_member', isMember);
