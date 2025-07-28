@@ -1,0 +1,49 @@
+name: Check if user is a close contributor
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+
+permissions:
+  members: read
+
+jobs:
+  check-membership:
+    runs-on: ubuntu-latest
+    outputs:
+      is-member: ${{ steps.check_team_membership.outputs.is_member }}
+    steps:
+      - name: Check if user is in the designated team
+        id: check_team_membership
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const username = ${{ toJSON(context.actor) }};
+            const org = context.repo.owner;
+            const team_slug = 'tset';
+            let isMember = false;
+            try {
+              const response = await github.rest.teams.getMembershipForUserInOrg({
+                org,
+                team_slug,
+                username,
+              });
+
+              if (response.status === 200 && response.data.state === 'active') {
+                isMember = true;
+                console.log(`✅ ${username} is an active member of the '${team_slug}' team.`);
+              } else {
+                 console.log(`ℹ️ ${username} has a '${response.data.state}' state in the '${team_slug}' team.`);
+              }
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`❌ ${username} is not a member of the '${team_slug}' team.`);
+              } else {
+                core.setFailed(`API call failed with status ${error.status}: ${error.message}`);
+              }
+            }
+            core.setOutput('is_member', isMember.toString());
