@@ -6,9 +6,9 @@ on:
   issues:
     types: [opened]
 
-# Corrected permissions block
-permissions:
-  organization: read
+# The 'permissions' block has been removed to use default token permissions.
+# Ensure your repository/organization settings grant the GITHUB_TOKEN
+# read access to organization members.
 
 jobs:
   check-membership:
@@ -22,7 +22,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            // Correctly access the context object
             const username = context.actor;
             const org = context.repo.owner;
             const team_slug = 'tset';
