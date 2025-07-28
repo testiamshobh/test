@@ -1,3 +1,10 @@
+name: Check if user is a close contributor
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
 jobs:
   check-membership:
     runs-on: ubuntu-latest
