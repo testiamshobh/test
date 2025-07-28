@@ -6,9 +6,9 @@ on:
   issues:
     types: [opened]
 
-
+# Corrected permissions block
 permissions:
-  members: read
+  organization: read
 
 jobs:
   check-membership:
@@ -22,10 +22,12 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const username = ${{ toJSON(context.actor) }};
+            // Correctly access the context object
+            const username = context.actor;
             const org = context.repo.owner;
             const team_slug = 'tset';
             let isMember = false;
+
             try {
               const response = await github.rest.teams.getMembershipForUserInOrg({
                 org,
@@ -37,7 +39,7 @@ jobs:
                 isMember = true;
                 console.log(`✅ ${username} is an active member of the '${team_slug}' team.`);
               } else {
-                 console.log(`ℹ️ ${username} has a '${response.data.state}' state in the '${team_slug}' team.`);
+                  console.log(`ℹ️ ${username} has a '${response.data.state}' state in the '${team_slug}' team.`);
               }
             } catch (error) {
               if (error.status === 404) {
@@ -46,4 +48,4 @@ jobs:
                 core.setFailed(`API call failed with status ${error.status}: ${error.message}`);
               }
             }
-            core.setOutput('is_member', isMember.toString());
+            core.setOutput('is_member', isMember);
